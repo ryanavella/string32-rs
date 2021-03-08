@@ -121,10 +121,30 @@ impl Str32 {
 
     /// Returns an iterator over the characters of the `Str32`, and their byte indices.
     #[must_use]
-    pub fn char_indices(&self) -> impl Iterator<Item = (u32, char)> + '_ {
+    pub fn char_indices(&self) -> impl DoubleEndedIterator<Item = (u32, char)> + '_ {
         self.0
             .char_indices()
             .map(|(i, c)| (i.try_into().unwrap(), c))
+    }
+
+    pub fn lines(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+        self.0.lines().map(|line| line.try_into().unwrap())
+    }
+
+    pub fn split_ascii_whitespace(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+        self.0
+            .split_ascii_whitespace()
+            .map(|line| line.try_into().unwrap())
+    }
+
+    pub fn split_at(&self, mid: u32) -> (&Self, &Self) {
+        let (s1, s2) = self.0.split_at(mid.into_usize());
+        (s1.try_into().unwrap(), s2.try_into().unwrap())
+    }
+
+    pub fn split_at_mut(&mut self, mid: u32) -> (&mut Self, &mut Self) {
+        let (s1, s2) = self.0.split_at_mut(mid.into_usize());
+        (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
     /// Checks if two string slices are equal, ignoring ASCII case mismatches.
