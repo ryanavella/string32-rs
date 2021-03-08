@@ -1,10 +1,10 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::Hash;
+use std::slice;
 
 use usize_cast::IntoUsize;
 
-use super::util;
 use super::CharIndices;
 use super::String32;
 use super::TryFromStringError;
@@ -14,39 +14,43 @@ use super::TryFromStringError;
 /// Should behave more or less the same as a `str` but some methods return `u32` instead of `usize`.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct Str32 {
-    slice: [u8],
-}
+pub struct Str32(str);
 
 impl Str32 {
     /// Convert a `&Str32` to a `&str` slice.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        unsafe {
-            // safety: Str32 only holds valid UTF-8
-            util::str_from_utf8_unchecked(&self.slice)
-        }
+        &self.0
     }
 
     /// Convert a `&mut Str32` to a `&mut str` slice.
     #[must_use]
     pub fn as_mut_str(&mut self) -> &mut str {
-        unsafe {
-            // safety: Str32 only holds valid UTF-8
-            util::str_from_utf8_unchecked_mut(&mut self.slice)
-        }
+        &mut self.0
     }
 
     /// Converts the `Str32` to a byte slice.
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
-        &self.slice
+        self.0.as_bytes()
+    }
+
+    /// Converts the `Str32` to a byte slice.
+    #[must_use]
+    pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
+        self.0.as_bytes_mut()
+    }
+
+    /// Returns an iterator over the bytes of the string slice.
+    #[must_use]
+    pub fn bytes(&self) -> std::str::Bytes<'_> {
+        self.0.bytes()
     }
 
     /// Converts the `Str32` to a raw pointer.
     #[must_use]
     pub const fn as_ptr(&self) -> *const u8 {
-        self.slice.as_ptr()
+        self.0.as_ptr()
     }
 
     /// Converts the `Str32` to a mutable raw pointer.
@@ -55,21 +59,43 @@ impl Str32 {
     /// ensures it is always valid UTF-8.
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.slice.as_mut_ptr()
+        self.0.as_mut_ptr()
     }
 
+    #[must_use]
+    pub fn from_str(s: &str) -> &Self {
+        s.try_into().unwrap()
+    }
+
+    #[must_use]
     pub fn from_mut_str(s: &mut str) -> &mut Self {
-        let _ = u32::try_from(s.len()).unwrap();
-        unsafe {
-            // safety: relies on `&mut Str32` and `&mut [u8]` having the same layout. (todo: is there a better way?)
-            &mut *(s.as_bytes_mut() as *mut [u8] as *mut Self)
-        }
+        s.try_into().unwrap()
+    }
+
+    #[must_use]
+    pub fn get<I: slice::SliceIndex<str>>(&self, i: I) -> Option<&I::Output> {
+        self.0.get(i)
+    }
+
+    #[must_use]
+    pub fn get_mut<I: slice::SliceIndex<str>>(&mut self, i: I) -> Option<&mut I::Output> {
+        self.0.get_mut(i)
+    }
+
+    #[must_use]
+    pub unsafe fn get_unchecked<I: slice::SliceIndex<str>>(&self, i: I) -> &I::Output {
+        self.0.get_unchecked(i)
+    }
+
+    #[must_use]
+    pub unsafe fn get_unchecked_mut<I: slice::SliceIndex<str>>(&mut self, i: I) -> &mut I::Output {
+        self.0.get_unchecked_mut(i)
     }
 
     /// Returns the length of the `Str32` in bytes.
     #[must_use]
     pub fn len(&self) -> u32 {
-        self.slice.len().try_into().unwrap()
+        self.0.len().try_into().unwrap()
     }
 
     /// Returns whether the `Str32` is empty.
@@ -90,6 +116,31 @@ impl Str32 {
         CharIndices::from(self)
     }
 
+    /// Checks if two string slices are equal, ignoring ASCII case mismatches.
+    #[must_use]
+    pub fn eq_ignore_ascii_case(&self, other: &Self) -> bool {
+        self.0.eq_ignore_ascii_case(&other.0)
+    }
+
+    /// Return an iterator over the string slice's chars, each escaped according to `char::escape_debug`.
+    #[must_use]
+    pub fn escape_debug(&self) -> std::str::EscapeDebug<'_> {
+        self.0.escape_debug()
+    }
+
+    /// Return an iterator over the string slice's chars, each escaped according to `char::escape_default`.
+    #[must_use]
+    pub fn escape_default(&self) -> std::str::EscapeDefault<'_> {
+        self.0.escape_default()
+    }
+
+    /// Return an iterator over the string slice's chars, each escaped according to `char::escape_unicode`.
+    #[must_use]
+    pub fn escape_unicode(&self) -> std::str::EscapeUnicode<'_> {
+        self.0.escape_unicode()
+    }
+
+    /// Returns whether the given index corresponds to a `char` boundary.
     #[must_use]
     pub fn is_char_boundary(&self, index: u32) -> bool {
         self.as_str().is_char_boundary(index.into_usize())
@@ -153,6 +204,20 @@ impl Str32 {
     pub fn trim_end(&self) -> &Self {
         self.as_str().trim_end().try_into().unwrap()
     }
+
+    #[must_use]
+    pub fn into_boxed_bytes(self: Box<Self>) -> Box<[u8]> {
+        let ptr = Box::into_raw(self) as *mut [u8];
+        unsafe {
+            // safety: relies on `Box<Str32>` and `Box<[u8]>` having the same layout
+            Box::from_raw(ptr)
+        }
+    }
+
+    #[must_use]
+    pub fn into_string(self: Box<Str32>) -> String32 {
+        todo!()
+    }
 }
 
 impl AsRef<[u8]> for Str32 {
@@ -177,24 +242,38 @@ impl ToOwned for Str32 {
     type Owned = String32;
 
     fn to_owned(&self) -> String32 {
-        let s = unsafe {
-            // safety: Str32 only holds valid UTF-8
-            util::str_from_utf8_unchecked(&self.slice)
-        };
-        s.to_owned().try_into().unwrap()
+        self.0.to_owned().try_into().unwrap()
     }
 }
 
-impl TryFrom<&str> for &Str32 {
+impl<'a> TryFrom<&'a str> for &'a Str32 {
     type Error = TryFromStringError;
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
-        match u32::try_from(s.len()) {
-            Ok(_) => Ok(unsafe {
-                // safety: relies on `&Str32` and `&[u8]` having the same layout. (todo: is there a better way?)
-                &*(s.as_bytes() as *const [u8] as *const Str32)
-            }),
-            Err(_) => Err(TryFromStringError(())),
-        }
+        u32::try_from(s.len())
+            .map(|_| {
+                let ptr = s as *const str as *const Str32;
+                unsafe {
+                    // safety: relies on `&Str32` and `&str` having the same layout
+                    &*ptr
+                }
+            })
+            .map_err(|_| TryFromStringError(()))
+    }
+}
+
+impl<'a> TryFrom<&'a mut str> for &'a mut Str32 {
+    type Error = TryFromStringError;
+
+    fn try_from(s: &mut str) -> Result<Self, Self::Error> {
+        u32::try_from(s.len())
+            .map(|_| {
+                let ptr = s as *mut str as *mut Str32;
+                unsafe {
+                    // safety: relies on `&mut Str32` and `&mut str` having the same layout
+                    &mut *ptr
+                }
+            })
+            .map_err(|_| TryFromStringError(()))
     }
 }
