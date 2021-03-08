@@ -5,7 +5,6 @@ use std::slice;
 
 use usize_cast::IntoUsize;
 
-use super::CharIndices;
 use super::String32;
 use super::TryFromStringError;
 
@@ -62,11 +61,21 @@ impl Str32 {
         self.0.as_mut_ptr()
     }
 
+    /// Converts a `&str` into a `&Str32`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided string slice occupies more than `u32::MAX` bytes.
     #[must_use]
     pub fn from_str(s: &str) -> &Self {
         s.try_into().unwrap()
     }
 
+    /// Converts a `&mut str` into a `&mut Str32`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided string slice occupies more than `u32::MAX` bytes.
     #[must_use]
     pub fn from_mut_str(s: &mut str) -> &mut Self {
         s.try_into().unwrap()
@@ -107,13 +116,15 @@ impl Str32 {
     /// Returns an iterator over the characters of the `Str32`.
     #[must_use]
     pub fn chars(&self) -> std::str::Chars {
-        self.as_str().chars()
+        self.0.chars()
     }
 
     /// Returns an iterator over the characters of the `Str32`, and their byte indices.
     #[must_use]
-    pub fn char_indices(&self) -> CharIndices {
-        CharIndices::from(self)
+    pub fn char_indices(&self) -> impl Iterator<Item = (u32, char)> + '_ {
+        self.0
+            .char_indices()
+            .map(|(i, c)| (i.try_into().unwrap(), c))
     }
 
     /// Checks if two string slices are equal, ignoring ASCII case mismatches.
@@ -143,15 +154,15 @@ impl Str32 {
     /// Returns whether the given index corresponds to a `char` boundary.
     #[must_use]
     pub fn is_char_boundary(&self, index: u32) -> bool {
-        self.as_str().is_char_boundary(index.into_usize())
+        self.0.is_char_boundary(index.into_usize())
     }
 
     pub fn make_ascii_lowercase(&mut self) {
-        self.as_mut_str().make_ascii_lowercase()
+        self.0.make_ascii_lowercase()
     }
 
     pub fn make_ascii_uppercase(&mut self) {
-        self.as_mut_str().make_ascii_uppercase()
+        self.0.make_ascii_uppercase()
     }
 
     /// Parses a `&Str32` slice into another type.
@@ -162,61 +173,67 @@ impl Str32 {
     ///
     /// `Err`: `string32::TryFromStringError`
     pub fn parse<F: std::str::FromStr>(&self) -> Result<F, F::Err> {
-        std::str::FromStr::from_str(self.as_str())
+        self.0.parse()
     }
 
     #[must_use]
     pub fn repeat(&self, n: u32) -> String32 {
-        self.as_str().repeat(n.into_usize()).try_into().unwrap()
+        self.0.repeat(n.into_usize()).try_into().unwrap()
     }
 
     #[must_use]
     pub fn to_lowercase(&self) -> String32 {
-        self.as_str().to_lowercase().try_into().unwrap()
+        self.0.to_lowercase().try_into().unwrap()
     }
 
     #[must_use]
     pub fn to_uppercase(&self) -> String32 {
-        self.as_str().to_uppercase().try_into().unwrap()
+        self.0.to_uppercase().try_into().unwrap()
     }
 
     #[must_use]
     pub fn to_ascii_lowercase(&self) -> String32 {
-        self.as_str().to_ascii_lowercase().try_into().unwrap()
+        self.0.to_ascii_lowercase().try_into().unwrap()
     }
 
     #[must_use]
     pub fn to_ascii_uppercase(&self) -> String32 {
-        self.as_str().to_ascii_uppercase().try_into().unwrap()
+        self.0.to_ascii_uppercase().try_into().unwrap()
     }
 
     #[must_use]
     pub fn trim(&self) -> &Self {
-        self.as_str().trim().try_into().unwrap()
+        self.0.trim().try_into().unwrap()
     }
 
     #[must_use]
     pub fn trim_start(&self) -> &Self {
-        self.as_str().trim_start().try_into().unwrap()
+        self.0.trim_start().try_into().unwrap()
     }
 
     #[must_use]
     pub fn trim_end(&self) -> &Self {
-        self.as_str().trim_end().try_into().unwrap()
+        self.0.trim_end().try_into().unwrap()
+    }
+
+    #[must_use]
+    pub fn into_boxed_str(self: Box<Self>) -> Box<str> {
+        self.into()
     }
 
     #[must_use]
     pub fn into_boxed_bytes(self: Box<Self>) -> Box<[u8]> {
-        let ptr = Box::into_raw(self) as *mut [u8];
-        unsafe {
-            // safety: relies on `Box<Str32>` and `Box<[u8]>` having the same layout
-            Box::from_raw(ptr)
-        }
+        self.into()
     }
 
     #[must_use]
-    pub fn into_string(self: Box<Str32>) -> String32 {
-        todo!()
+    pub fn into_string(self: Box<Self>) -> String {
+        self.into()
+    }
+
+    #[must_use]
+    pub fn into_string32(self: Box<Self>) -> String32 {
+        self.into()
     }
 }
 
@@ -228,13 +245,13 @@ impl AsRef<[u8]> for Str32 {
 
 impl AsRef<str> for Str32 {
     fn as_ref(&self) -> &str {
-        self.as_str()
+        &self.0
     }
 }
 
 impl fmt::Display for Str32 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self.as_str(), f)
+        self.0.fmt(f)
     }
 }
 
@@ -243,6 +260,34 @@ impl ToOwned for Str32 {
 
     fn to_owned(&self) -> String32 {
         self.0.to_owned().try_into().unwrap()
+    }
+}
+
+impl From<Box<Str32>> for Box<str> {
+    fn from(b: Box<Str32>) -> Self {
+        let ptr = Box::into_raw(b) as *mut str;
+        unsafe {
+            // safety: relies on `Box<Str32>` and `Box<str>` having the same layout
+            Box::from_raw(ptr)
+        }
+    }
+}
+
+impl From<Box<Str32>> for Box<[u8]> {
+    fn from(b: Box<Str32>) -> Self {
+        b.into_boxed_str().into_boxed_bytes()
+    }
+}
+
+impl From<Box<Str32>> for String {
+    fn from(b: Box<Str32>) -> Self {
+        b.into_boxed_str().into_string()
+    }
+}
+
+impl From<Box<Str32>> for String32 {
+    fn from(b: Box<Str32>) -> Self {
+        String::from(b).try_into().unwrap()
     }
 }
 

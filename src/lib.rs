@@ -3,13 +3,11 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::missing_panics_doc)]
 
-mod charindices;
 mod str32;
 mod string32;
 mod util;
 
 pub use self::string32::String32;
-pub use charindices::CharIndices;
 pub use str32::Str32;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
