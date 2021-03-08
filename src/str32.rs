@@ -147,6 +147,12 @@ impl Str32 {
         (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
+    pub fn split_whitespace(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+        self.0
+            .split_whitespace()
+            .map(|line| line.try_into().unwrap())
+    }
+
     /// Checks if two string slices are equal, ignoring ASCII case mismatches.
     #[must_use]
     pub fn eq_ignore_ascii_case(&self, other: &Self) -> bool {
