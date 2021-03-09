@@ -3,6 +3,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
+use std::mem;
 use std::ops::{Deref, DerefMut};
 
 use mediumvec::Vec32;
@@ -43,31 +44,34 @@ impl String32 {
         self.vec.capacity()
     }
 
+    /// A helper to call arbitrary `String` methods on a `String32.`
+    pub fn as_string<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(&mut String) -> T,
+    {
+        let mut s = mem::take(self).into();
+        let ret = f(&mut s);
+        *self = s.try_into().unwrap();
+        ret
+    }
+
     /// Push a `char` to the end of this `String32`.
     ///
     /// # Panics
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
     pub fn push(&mut self, ch: char) {
-        let mut s = String::from(self.take());
-        s.push(ch);
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.push(ch));
     }
 
     /// Pop a `char` from the end of this `String32`.
     pub fn pop(&mut self) -> Option<char> {
-        let mut s = String::from(self.take());
-        let c = s.pop();
-        *self = s.try_into().unwrap();
-        c
+        self.as_string(|s| s.pop())
     }
 
     /// Return the `char` at a given byte index.
     pub fn remove(&mut self, idx: u32) -> char {
-        let mut s = String::from(self.take());
-        let c = s.remove(idx.into_usize());
-        *self = s.try_into().unwrap();
-        c
+        self.as_string(|s| s.remove(idx.into_usize()))
     }
 
     /// Insert a `char` at a given byte index.
@@ -76,9 +80,7 @@ impl String32 {
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
     pub fn insert(&mut self, idx: u32, ch: char) {
-        let mut s = String::from(self.take());
-        s.insert(idx.into_usize(), ch);
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.insert(idx.into_usize(), ch));
     }
 
     /// Insert a `&str` at the given byte index.
@@ -87,9 +89,7 @@ impl String32 {
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
     pub fn insert_str(&mut self, idx: u32, string: &str) {
-        let mut s = String::from(self.take());
-        s.insert_str(idx.into_usize(), string);
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.insert_str(idx.into_usize(), string));
     }
 
     /// Creates a new empty `String32` with given capacity.
@@ -130,9 +130,7 @@ impl String32 {
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
     pub fn push_str(&mut self, string: &str) {
-        let mut vec = self.take().vec.into_vec();
-        vec.extend_from_slice(string.as_bytes());
-        self.vec = Vec32::from_vec(vec);
+        self.as_string(|s| s.push_str(string));
     }
 
     /// Reserve space for additional bytes.
@@ -147,9 +145,7 @@ impl String32 {
 
     /// Shrink the capacity of this `String32` to match its length.
     pub fn shrink_to_fit(&mut self) {
-        let mut vec = self.take().into_bytes();
-        vec.shrink_to_fit();
-        self.vec = Vec32::from_vec(vec);
+        self.as_string(|s| s.shrink_to_fit());
     }
 
     /// Return a byte slice of the `String32`'s contents.
@@ -160,9 +156,7 @@ impl String32 {
 
     /// Shortens this `String32` to the specified length.
     pub fn truncate(&mut self, new_len: u32) {
-        let mut s = String::from(self.take());
-        s.truncate(new_len.into_usize());
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.truncate(new_len.into_usize()));
     }
 
     /// Return whether the `String32` is an empty string.
@@ -173,10 +167,7 @@ impl String32 {
 
     /// Splits the `String32` into two at the given byte index.
     pub fn split_off(&mut self, at: u32) -> Self {
-        let mut s = String::from(self.take());
-        let other = s.split_off(at.into_usize());
-        *self = s.try_into().unwrap();
-        other.try_into().unwrap()
+        self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
     }
 
     /// Truncates the `String32` into an empty string.
@@ -191,20 +182,56 @@ impl String32 {
     }
 
     pub fn make_ascii_lowercase(&mut self) {
-        let mut s = String::from(self.take());
-        s.make_ascii_lowercase();
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.make_ascii_lowercase());
     }
 
     pub fn make_ascii_uppercase(&mut self) {
-        let mut s = String::from(self.take());
-        s.make_ascii_uppercase();
-        *self = s.try_into().unwrap();
+        self.as_string(|s| s.make_ascii_uppercase());
     }
 
-    #[must_use]
-    fn take(&mut self) -> Self {
-        std::mem::take(self)
+    pub unsafe fn from_raw_parts(buf: *mut u8, len: u32, cap: u32) -> Self {
+        Self {
+            vec: Vec32::from_vec(Vec::from_raw_parts(buf, len.into_usize(), cap.into_usize())),
+        }
+    }
+
+    /// Decodes a UTF-8 encoded vector of bytes into a `String32`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the slice is not valid UTF-8.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the provided `Vec<u8>` holds more than `u32::MAX` bytes.
+    pub fn from_utf8(v: Vec<u8>) -> Result<Self, std::string::FromUtf8Error> {
+        String::from_utf8(v).map(|s| s.try_into().unwrap())
+    }
+
+    /// Decodes a UTF-16 encoded slice into a `String32`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the slice is not valid UTF-16.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
+    pub fn from_utf16(v: &[u16]) -> Result<Self, std::string::FromUtf16Error> {
+        String::from_utf16(v).map(|s| s.try_into().unwrap())
+    }
+
+    /// Lossily decodes a UTF-16 encoded slice into a `String32`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the slice is not valid UTF-16.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
+    pub fn from_utf16_lossy(v: &[u16]) -> Self {
+        String::from_utf16_lossy(v).try_into().unwrap()
     }
 }
 
