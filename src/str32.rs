@@ -17,7 +17,7 @@ pub struct Str32(str);
 impl Str32 {
     /// Convert a `&Str32` to a `&str` slice.
     #[must_use]
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         &self.0
     }
 
@@ -37,7 +37,7 @@ impl Str32 {
     ///
     /// # Safety
     ///
-    /// The caller may only modify the byte slice in a way that preserves UTF-8 validity.
+    /// See [`str::as_bytes_mut`].
     #[must_use]
     pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
         self.0.as_bytes_mut()
@@ -62,16 +62,6 @@ impl Str32 {
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.0.as_mut_ptr()
-    }
-
-    /// Converts a `&str` into a `&Str32`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the provided string slice occupies more than `u32::MAX` bytes.
-    #[must_use]
-    pub fn from_str(s: &str) -> &Self {
-        s.try_into().unwrap()
     }
 
     /// Converts a `&mut str` into a `&mut Str32`.
@@ -110,27 +100,32 @@ impl Str32 {
             .map(|(i, c)| (i.try_into().unwrap(), c))
     }
 
-    pub fn lines(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+    #[must_use]
+    pub fn lines(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0.lines().map(|line| line.try_into().unwrap())
     }
 
-    pub fn split_ascii_whitespace(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+    #[must_use]
+    pub fn split_ascii_whitespace(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0
             .split_ascii_whitespace()
             .map(|line| line.try_into().unwrap())
     }
 
+    #[must_use]
     pub fn split_at(&self, mid: u32) -> (&Self, &Self) {
         let (s1, s2) = self.0.split_at(mid.into_usize());
         (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
+    #[must_use]
     pub fn split_at_mut(&mut self, mid: u32) -> (&mut Self, &mut Self) {
         let (s1, s2) = self.0.split_at_mut(mid.into_usize());
         (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
-    pub fn split_whitespace(&self) -> impl DoubleEndedIterator<Item = &Str32> + '_ {
+    #[must_use]
+    pub fn split_whitespace(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0
             .split_whitespace()
             .map(|line| line.try_into().unwrap())
@@ -288,6 +283,7 @@ impl From<Box<Str32>> for Box<[u8]> {
     }
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<Box<Str32>> for String32 {
     fn from(b: Box<Str32>) -> Self {
         String::from(b).try_into().unwrap()

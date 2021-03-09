@@ -35,7 +35,6 @@ impl String32 {
     }
 
     /// Returns the length of this `String32` in bytes.
-    #[allow(clippy::missing_panics_doc)]
     #[must_use]
     pub fn len(&self) -> u32 {
         self.0.len().try_into().unwrap()
@@ -87,7 +86,7 @@ impl String32 {
 
     /// Pop a `char` from the end of this `String32`.
     pub fn pop(&mut self) -> Option<char> {
-        self.as_string(|s| s.pop())
+        self.as_string(String::pop)
     }
 
     /// Return the `char` at a given byte index.
@@ -128,7 +127,7 @@ impl String32 {
 
     /// Shrink the capacity of this `String32` to match its length.
     pub fn shrink_to_fit(&mut self) {
-        self.as_string(|s| s.shrink_to_fit());
+        self.as_string(String::shrink_to_fit);
     }
 
     /// Shortens this `String32` to the specified length.
@@ -190,6 +189,11 @@ impl String32 {
         self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
     }
 
+    /// Create a new `String32` from a raw pointer and corresponding length/capacity.
+    ///
+    /// # Safety
+    ///
+    /// See [`String::from_raw_parts`].
     pub unsafe fn from_raw_parts(buf: *mut u8, len: u32, cap: u32) -> Self {
         Self(Vec32::from_vec(Vec::from_raw_parts(
             buf,
@@ -233,6 +237,7 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
+    #[must_use]
     pub fn from_utf16_lossy(v: &[u16]) -> Self {
         String::from_utf16_lossy(v).try_into().unwrap()
     }
@@ -347,14 +352,15 @@ impl From<&Str32> for String32 {
     }
 }
 
+#[allow(clippy::fallible_impl_from)]
 impl From<String32> for String {
     fn from(s: String32) -> Self {
         if cfg!(debug_assertions) {
-            String::from_utf8(s.0.into_vec()).unwrap()
+            Self::from_utf8(s.0.into_vec()).unwrap()
         } else {
             unsafe {
                 // safety: we never store a non-utf8 Vec32<u8> in a String32
-                String::from_utf8_unchecked(s.0.into_vec())
+                Self::from_utf8_unchecked(s.0.into_vec())
             }
         }
     }

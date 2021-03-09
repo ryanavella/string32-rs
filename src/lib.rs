@@ -1,7 +1,6 @@
 //! A string that is indexed by `u32` instead of `usize`.
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::missing_panics_doc)]
 
 mod str32;
 mod string32;
