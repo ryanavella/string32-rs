@@ -5,7 +5,6 @@
 
 mod str32;
 mod string32;
-mod util;
 
 pub use self::string32::String32;
 pub use str32::Str32;

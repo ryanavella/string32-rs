@@ -9,7 +9,6 @@ use std::ops;
 use mediumvec::Vec32;
 use usize_cast::IntoUsize;
 
-use super::util;
 use super::Str32;
 use super::TryFromStringError;
 
@@ -151,18 +150,26 @@ impl String32 {
     /// Returns a string slice encompassing the entire `String32`.
     #[must_use]
     pub fn as_str(&self) -> &str {
-        unsafe {
-            // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::str_from_utf8_unchecked(&self.0)
+        if cfg!(debug_assertions) {
+            std::str::from_utf8(&self.0).unwrap()
+        } else {
+            unsafe {
+                // safety: we never store a non-utf8 Vec32<u8> in a String32
+                std::str::from_utf8_unchecked(&self.0)
+            }
         }
     }
 
     /// Returns a *mutable* string slice encompassing the entire `String32`.
     #[must_use]
     pub fn as_mut_str(&mut self) -> &mut str {
-        unsafe {
-            // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::str_from_utf8_unchecked_mut(&mut self.0)
+        if cfg!(debug_assertions) {
+            std::str::from_utf8_mut(&mut self.0).unwrap()
+        } else {
+            unsafe {
+                // safety: we never store a non-utf8 Vec32<u8> in a String32
+                std::str::from_utf8_unchecked_mut(&mut self.0)
+            }
         }
     }
 
@@ -342,9 +349,13 @@ impl From<&Str32> for String32 {
 
 impl From<String32> for String {
     fn from(s: String32) -> Self {
-        unsafe {
-            // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::string_from_utf8_unchecked(s.0.into_vec())
+        if cfg!(debug_assertions) {
+            String::from_utf8(s.0.into_vec()).unwrap()
+        } else {
+            unsafe {
+                // safety: we never store a non-utf8 Vec32<u8> in a String32
+                String::from_utf8_unchecked(s.0.into_vec())
+            }
         }
     }
 }
