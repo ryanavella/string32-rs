@@ -191,6 +191,7 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the index is out-of-bounds or is not a UTF-8 code point boundary.
+    #[must_use = "if you plan to discard the second half, consider using `String32::truncate` instead"]
     pub fn split_off(&mut self, at: u32) -> Self {
         self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
     }
@@ -354,7 +355,6 @@ impl fmt::Display for String32 {
 }
 
 impl From<&Str32> for String32 {
-    #[inline]
     fn from(s: &Str32) -> Self {
         s.to_owned()
     }
