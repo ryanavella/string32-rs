@@ -51,6 +51,10 @@ impl String32 {
     }
 
     /// A helper to call arbitrary [`String`] methods on a `String32.`
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
     pub fn as_string<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(&mut String) -> T,
@@ -183,6 +187,10 @@ impl String32 {
     }
 
     /// Splits the `String32` into two at the given byte index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out-of-bounds or is not a UTF-8 code point boundary.
     pub fn split_off(&mut self, at: u32) -> Self {
         self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
     }
@@ -375,6 +383,54 @@ impl From<String32> for Vec<u8> {
 impl iter::FromIterator<char> for String32 {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl<'a> iter::FromIterator<&'a char> for String32 {
+    fn from_iter<I: IntoIterator<Item = &'a char>>(iter: I) -> Self {
+        String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl<'a> iter::FromIterator<&'a str> for String32 {
+    fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
+        String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl<'a> iter::FromIterator<&'a Str32> for String32 {
+    fn from_iter<I: IntoIterator<Item = &'a Str32>>(iter: I) -> Self {
+        String::from_iter(iter.into_iter().map(Str32::as_str))
+            .try_into()
+            .unwrap()
+    }
+}
+
+impl iter::FromIterator<Box<str>> for String32 {
+    fn from_iter<I: IntoIterator<Item = Box<str>>>(iter: I) -> Self {
+        String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl iter::FromIterator<Box<Str32>> for String32 {
+    fn from_iter<I: IntoIterator<Item = Box<Str32>>>(iter: I) -> Self {
+        String::from_iter(iter.into_iter().map(Str32::into_boxed_str))
+            .try_into()
+            .unwrap()
+    }
+}
+
+impl iter::FromIterator<String> for String32 {
+    fn from_iter<I: IntoIterator<Item = String>>(iter: I) -> Self {
+        String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl iter::FromIterator<Self> for String32 {
+    fn from_iter<I: IntoIterator<Item = Self>>(iter: I) -> Self {
+        String::from_iter(iter.into_iter().map(String::from))
+            .try_into()
+            .unwrap()
     }
 }
 
