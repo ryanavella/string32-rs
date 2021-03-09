@@ -271,6 +271,12 @@ impl ops::AddAssign<&Str32> for String32 {
     }
 }
 
+impl AsMut<Str32> for String32 {
+    fn as_mut(&mut self) -> &mut Str32 {
+        self
+    }
+}
+
 impl AsRef<Str32> for String32 {
     fn as_ref(&self) -> &Str32 {
         &*self
@@ -323,7 +329,7 @@ impl ops::DerefMut for String32 {
 
 impl fmt::Display for String32 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self.as_str(), f)
+        self.as_str().fmt(f)
     }
 }
 
