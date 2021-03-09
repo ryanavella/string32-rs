@@ -4,7 +4,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter;
 use std::mem;
-use std::ops::{Deref, DerefMut};
+use std::ops;
 
 use mediumvec::Vec32;
 use usize_cast::IntoUsize;
@@ -79,8 +79,11 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
-    pub fn push_str(&mut self, string: &str) {
-        self.as_string(|s| s.push_str(string));
+    pub fn push_str<S>(&mut self, string: S)
+    where
+        S: AsRef<str>,
+    {
+        self.as_string(|s| s.push_str(string.as_ref()));
     }
 
     /// Pop a `char` from the end of this `String32`.
@@ -102,13 +105,16 @@ impl String32 {
         self.as_string(|s| s.insert(idx.into_usize(), ch));
     }
 
-    /// Insert a `&str` at the given byte index.
+    /// Insert a string slice at the given byte index.
     ///
     /// # Panics
     ///
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
-    pub fn insert_str(&mut self, idx: u32, string: &str) {
-        self.as_string(|s| s.insert_str(idx.into_usize(), string));
+    pub fn insert_str<S>(&mut self, idx: u32, string: S)
+    where
+        S: AsRef<str>,
+    {
+        self.as_string(|s| s.insert_str(idx.into_usize(), string.as_ref()));
     }
 
     /// Reserve space for additional bytes.
@@ -233,6 +239,38 @@ impl String32 {
     }
 }
 
+impl ops::Add<&str> for String32 {
+    type Output = Self;
+
+    #[must_use]
+    fn add(mut self, rhs: &str) -> Self {
+        self.push_str(rhs);
+        self
+    }
+}
+
+impl ops::Add<&Str32> for String32 {
+    type Output = Self;
+
+    #[must_use]
+    fn add(mut self, rhs: &Str32) -> Self {
+        self.push_str(rhs);
+        self
+    }
+}
+
+impl ops::AddAssign<&str> for String32 {
+    fn add_assign(&mut self, rhs: &str) {
+        self.push_str(rhs);
+    }
+}
+
+impl ops::AddAssign<&Str32> for String32 {
+    fn add_assign(&mut self, rhs: &Str32) {
+        self.push_str(rhs);
+    }
+}
+
 impl AsRef<Str32> for String32 {
     fn as_ref(&self) -> &Str32 {
         &*self
@@ -263,7 +301,7 @@ impl BorrowMut<Str32> for String32 {
     }
 }
 
-impl Deref for String32 {
+impl ops::Deref for String32 {
     type Target = Str32;
 
     fn deref(&self) -> &Str32 {
@@ -274,7 +312,7 @@ impl Deref for String32 {
     }
 }
 
-impl DerefMut for String32 {
+impl ops::DerefMut for String32 {
     fn deref_mut(&mut self) -> &mut Str32 {
         unsafe {
             // safety: relies on `&mut Str32` and `&mut [u8]` having the same layout. (todo: is there a better way?)

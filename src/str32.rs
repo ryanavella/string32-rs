@@ -289,6 +289,12 @@ impl ToOwned for Str32 {
     }
 }
 
+impl<'a> From<&'a Str32> for &'a str {
+    fn from(s: &'a Str32) -> Self {
+        &s.0
+    }
+}
+
 impl From<Box<Str32>> for Box<str> {
     fn from(b: Box<Str32>) -> Self {
         let ptr = Box::into_raw(b) as *mut str;
