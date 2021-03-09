@@ -2,7 +2,7 @@ use std::borrow::{Borrow, BorrowMut};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
+use std::iter;
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
@@ -289,24 +289,6 @@ impl fmt::Display for String32 {
     }
 }
 
-impl FromIterator<char> for String32 {
-    fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
-        String::from_iter(iter).try_into().unwrap()
-    }
-}
-
-impl Hash for String32 {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.as_str().hash(hasher);
-    }
-}
-
-impl PartialEq for String32 {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.deref().eq(rhs)
-    }
-}
-
 impl From<&Str32> for String32 {
     #[inline]
     fn from(s: &Str32) -> Self {
@@ -326,6 +308,24 @@ impl From<String32> for String {
 impl From<String32> for Vec<u8> {
     fn from(s: String32) -> Self {
         s.0.into_vec()
+    }
+}
+
+impl iter::FromIterator<char> for String32 {
+    fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
+        String::from_iter(iter).try_into().unwrap()
+    }
+}
+
+impl Hash for String32 {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.as_str().hash(hasher);
+    }
+}
+
+impl PartialEq for String32 {
+    fn eq(&self, rhs: &Self) -> bool {
+        self.as_str().eq(rhs.as_str())
     }
 }
 
