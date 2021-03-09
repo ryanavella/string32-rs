@@ -29,6 +29,12 @@ impl String32 {
         Self(Vec32::new())
     }
 
+    /// Creates a new empty `String32` with given capacity.
+    #[must_use]
+    pub fn with_capacity(cap: u32) -> Self {
+        Self(Vec32::with_capacity(cap))
+    }
+
     /// Returns the length of this `String32` in bytes.
     #[allow(clippy::missing_panics_doc)]
     #[must_use]
@@ -40,6 +46,12 @@ impl String32 {
     #[must_use]
     pub fn capacity(&self) -> u32 {
         self.0.capacity()
+    }
+
+    /// Return whether the `String32` is an empty string.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     /// A helper to call arbitrary `String` methods on a `String32.`
@@ -60,6 +72,15 @@ impl String32 {
     /// Panics if the resulting string would require more than `u32::MAX` bytes.
     pub fn push(&mut self, ch: char) {
         self.as_string(|s| s.push(ch));
+    }
+
+    /// Append a string slice to the end of this `String32`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting string would require more than `u32::MAX` bytes.
+    pub fn push_str(&mut self, string: &str) {
+        self.as_string(|s| s.push_str(string));
     }
 
     /// Pop a `char` from the end of this `String32`.
@@ -90,10 +111,29 @@ impl String32 {
         self.as_string(|s| s.insert_str(idx.into_usize(), string));
     }
 
-    /// Creates a new empty `String32` with given capacity.
-    #[must_use]
-    pub fn with_capacity(cap: u32) -> Self {
-        Self(Vec32::with_capacity(cap))
+    /// Reserve space for additional bytes.
+    pub fn reserve(&mut self, additional: u32) {
+        self.0.reserve(additional)
+    }
+
+    /// Reserve space for an exact number of bytes.
+    pub fn reserve_exact(&mut self, additional: u32) {
+        self.0.reserve_exact(additional)
+    }
+
+    /// Shrink the capacity of this `String32` to match its length.
+    pub fn shrink_to_fit(&mut self) {
+        self.as_string(|s| s.shrink_to_fit());
+    }
+
+    /// Shortens this `String32` to the specified length.
+    pub fn truncate(&mut self, new_len: u32) {
+        self.as_string(|s| s.truncate(new_len.into_usize()));
+    }
+
+    /// Truncates the `String32` into an empty string.
+    pub fn clear(&mut self) {
+        self.0.clear()
     }
 
     /// Converts a `String32` into a vector of bytes.
@@ -120,55 +160,10 @@ impl String32 {
         }
     }
 
-    /// Append a string slice to the end of this `String32`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the resulting string would require more than `u32::MAX` bytes.
-    pub fn push_str(&mut self, string: &str) {
-        self.as_string(|s| s.push_str(string));
-    }
-
-    /// Reserve space for additional bytes.
-    pub fn reserve(&mut self, additional: u32) {
-        self.0.reserve(additional)
-    }
-
-    /// Reserve space for an exact number of bytes.
-    pub fn reserve_exact(&mut self, additional: u32) {
-        self.0.reserve_exact(additional)
-    }
-
-    /// Shrink the capacity of this `String32` to match its length.
-    pub fn shrink_to_fit(&mut self) {
-        self.as_string(|s| s.shrink_to_fit());
-    }
-
     /// Return a byte slice of the `String32`'s contents.
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.0
-    }
-
-    /// Shortens this `String32` to the specified length.
-    pub fn truncate(&mut self, new_len: u32) {
-        self.as_string(|s| s.truncate(new_len.into_usize()));
-    }
-
-    /// Return whether the `String32` is an empty string.
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Splits the `String32` into two at the given byte index.
-    pub fn split_off(&mut self, at: u32) -> Self {
-        self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
-    }
-
-    /// Truncates the `String32` into an empty string.
-    pub fn clear(&mut self) {
-        self.0.clear()
     }
 
     /// Converts a `String32` into a `Box<str>`.
@@ -177,12 +172,9 @@ impl String32 {
         String::from(self).into_boxed_str()
     }
 
-    pub fn make_ascii_lowercase(&mut self) {
-        self.as_string(|s| s.make_ascii_lowercase());
-    }
-
-    pub fn make_ascii_uppercase(&mut self) {
-        self.as_string(|s| s.make_ascii_uppercase());
+    /// Splits the `String32` into two at the given byte index.
+    pub fn split_off(&mut self, at: u32) -> Self {
+        self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
     }
 
     pub unsafe fn from_raw_parts(buf: *mut u8, len: u32, cap: u32) -> Self {
@@ -230,6 +222,14 @@ impl String32 {
     /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
     pub fn from_utf16_lossy(v: &[u16]) -> Self {
         String::from_utf16_lossy(v).try_into().unwrap()
+    }
+
+    pub fn make_ascii_lowercase(&mut self) {
+        self.as_string(|s| s.make_ascii_lowercase());
+    }
+
+    pub fn make_ascii_uppercase(&mut self) {
+        self.as_string(|s| s.make_ascii_uppercase());
     }
 }
 
