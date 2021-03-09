@@ -9,13 +9,13 @@ use super::TryFromStringError;
 
 /// A slice of a `String32`.
 ///
-/// Should behave more or less the same as a `str` but some methods return `u32` instead of `usize`.
+/// This is just a thin wrapper around [`str`], but with the convenience of an API built around [`u32`] indices instead of [`usize`] indices.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct Str32(str);
 
 impl Str32 {
-    /// Convert a `&Str32` to a `&str` slice.
+    /// Convert a `&Str32` to a [`&str`] slice.
     #[must_use]
     pub const fn as_str(&self) -> &str {
         &self.0
@@ -68,7 +68,7 @@ impl Str32 {
     ///
     /// # Panics
     ///
-    /// Panics if the provided string slice occupies more than `u32::MAX` bytes.
+    /// Panics if the provided string slice occupies more than [`u32::MAX`] bytes.
     #[must_use]
     pub fn from_mut_str(s: &mut str) -> &mut Self {
         s.try_into().unwrap()
@@ -100,11 +100,13 @@ impl Str32 {
             .map(|(i, c)| (i.try_into().unwrap(), c))
     }
 
+    /// Returns an iterator over the lines of a `&Str32`.
     #[must_use]
     pub fn lines(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0.lines().map(|line| line.try_into().unwrap())
     }
 
+    /// Returns an iterator over the ASCII-whitespace-delimited words of a `&Str32`.
     #[must_use]
     pub fn split_ascii_whitespace(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0
@@ -112,18 +114,29 @@ impl Str32 {
             .map(|line| line.try_into().unwrap())
     }
 
+    /// Splits a `&Str32` in two at the given byte index.
+    ///
+    /// # Panics
+    ///
+    /// Panics when given an index that is not on a UTF-8 code point boundary, or if the index is out-of-bounds.
     #[must_use]
     pub fn split_at(&self, mid: u32) -> (&Self, &Self) {
         let (s1, s2) = self.0.split_at(mid.into_usize());
         (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
+    /// Splits a `&mut Str32` in two at the given byte index.
+    ///
+    /// # Panics
+    ///
+    /// Panics when given an index that is not on a UTF-8 code point boundary, or if the index is out-of-bounds.
     #[must_use]
     pub fn split_at_mut(&mut self, mid: u32) -> (&mut Self, &mut Self) {
         let (s1, s2) = self.0.split_at_mut(mid.into_usize());
         (s1.try_into().unwrap(), s2.try_into().unwrap())
     }
 
+    /// Returns an iterator over the whitespace-delimited words of a `&Str32`.
     #[must_use]
     pub fn split_whitespace(&self) -> impl DoubleEndedIterator<Item = &Self> + '_ {
         self.0
@@ -161,10 +174,12 @@ impl Str32 {
         self.0.is_char_boundary(index.into_usize())
     }
 
+    /// Converts all uppercase ASCII characters to lowercase.
     pub fn make_ascii_lowercase(&mut self) {
         self.0.make_ascii_lowercase()
     }
 
+    /// Converts all lowercase ASCII characters to uppercase.
     pub fn make_ascii_uppercase(&mut self) {
         self.0.make_ascii_uppercase()
     }
@@ -180,61 +195,85 @@ impl Str32 {
         self.0.parse()
     }
 
+    /// Create a [`String32`] formed by `n` repetitions of this string slice.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the resulting [`String32`] would require more than [`u32::MAX`] bytes.
     #[must_use]
     pub fn repeat(&self, n: u32) -> String32 {
         self.0.repeat(n.into_usize()).try_into().unwrap()
     }
 
+    /// Returns a lowercase equivalent of this `&Str32` as a new [`String32`].
     #[must_use]
     pub fn to_lowercase(&self) -> String32 {
         self.0.to_lowercase().try_into().unwrap()
     }
 
+    /// Returns an uppercase equivalent of this `&Str32` as a new [`String32`].
     #[must_use]
     pub fn to_uppercase(&self) -> String32 {
         self.0.to_uppercase().try_into().unwrap()
     }
 
+    /// Returns a new [`String32`] with each ASCII uppercase character mapped to lowercase.
     #[must_use]
     pub fn to_ascii_lowercase(&self) -> String32 {
         self.0.to_ascii_lowercase().try_into().unwrap()
     }
 
+    /// Returns a new [`String32`] with each ASCII lowercase character mapped to uppercase.
     #[must_use]
     pub fn to_ascii_uppercase(&self) -> String32 {
         self.0.to_ascii_uppercase().try_into().unwrap()
     }
 
+    /// Returns a substring of this string with leading and trailing whitespace removed.
     #[must_use]
     pub fn trim(&self) -> &Self {
         self.0.trim().try_into().unwrap()
     }
 
+    /// Returns a substring of this string with leading whitespace removed.
     #[must_use]
     pub fn trim_start(&self) -> &Self {
         self.0.trim_start().try_into().unwrap()
     }
 
+    /// Returns a substring of this string with trailing whitespace removed.
     #[must_use]
     pub fn trim_end(&self) -> &Self {
         self.0.trim_end().try_into().unwrap()
     }
 
+    /// Convert a `Box<Str32>` into a [`Box<str>`].
+    ///
+    /// This method has no overhead in the form of copying or allocating.
     #[must_use]
     pub fn into_boxed_str(self: Box<Self>) -> Box<str> {
         self.into()
     }
 
+    /// Convert a `Box<Str32>` into `Box<[u8]>`.
+    ///
+    /// This method has no overhead in the form of copying or allocating.
     #[must_use]
     pub fn into_boxed_bytes(self: Box<Self>) -> Box<[u8]> {
         self.into()
     }
 
+    /// Convert a `Box<Str32>` into a [`String`].
+    ///
+    /// This method has no overhead in the form of copying or allocating.
     #[must_use]
     pub fn into_string(self: Box<Self>) -> String {
         self.into()
     }
 
+    /// Convert a `Box<Str32>` into a [`String32`].
+    ///
+    /// This method has no overhead in the form of copying or allocating.
     #[must_use]
     pub fn into_string32(self: Box<Self>) -> String32 {
         self.into()
@@ -306,7 +345,7 @@ impl<'a> TryFrom<&'a str> for &'a Str32 {
             .map(|_| {
                 let ptr = s as *const str as *const Str32;
                 unsafe {
-                    // safety: relies on `&Str32` and `&str` having the same layout
+                    // safety: relies on `&Str32` and [`&str`] having the same layout
                     &*ptr
                 }
             })

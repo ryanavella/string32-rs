@@ -1,6 +1,9 @@
 //! A string that is indexed by `u32` instead of `usize`.
+//!
+//! On 64-bit platforms, `String32` only requires 16 bytes to store the pointer, length, and capacity. `String` by comparison requires 24 bytes, plus padding.
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
+#![warn(missing_docs)]
 
 mod str32;
 mod string32;
@@ -8,6 +11,7 @@ mod string32;
 pub use self::string32::String32;
 pub use str32::Str32;
 
+/// The error returned when a string conversion requires a buffer larger than `u32::MAX` bytes.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct TryFromStringError(());
 

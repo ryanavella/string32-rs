@@ -14,9 +14,7 @@ use super::TryFromStringError;
 
 /// A string that is indexed by `u32` instead of `usize`.
 ///
-/// On 32-bit platforms, `String32` behaves similarly to a `String`.
-///
-/// On 64-bit platforms, `String32` has a smaller memory footprint than `String` struct, but with a maximum capacity of `u32::MAX` instead of `usize::MAX`.
+/// On 64-bit platforms, `String32` only requires 16 bytes to store the pointer, length, and capacity. [`String`] by comparison requires 24 bytes, plus padding.
 #[derive(Clone, Debug, Default, PartialOrd, Eq, Ord)]
 #[repr(transparent)]
 pub struct String32(Vec32<u8>);
@@ -52,7 +50,7 @@ impl String32 {
         self.len() == 0
     }
 
-    /// A helper to call arbitrary `String` methods on a `String32.`
+    /// A helper to call arbitrary [`String`] methods on a `String32.`
     pub fn as_string<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(&mut String) -> T,
@@ -67,7 +65,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than `u32::MAX` bytes.
+    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
     pub fn push(&mut self, ch: char) {
         self.as_string(|s| s.push(ch));
     }
@@ -76,7 +74,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than `u32::MAX` bytes.
+    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
     pub fn push_str<S>(&mut self, string: S)
     where
         S: AsRef<str>,
@@ -98,7 +96,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than `u32::MAX` bytes.
+    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
     pub fn insert(&mut self, idx: u32, ch: char) {
         self.as_string(|s| s.insert(idx.into_usize(), ch));
     }
@@ -107,7 +105,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than `u32::MAX` bytes.
+    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
     pub fn insert_str<S>(&mut self, idx: u32, string: S)
     where
         S: AsRef<str>,
@@ -178,7 +176,7 @@ impl String32 {
         &self.0
     }
 
-    /// Converts a `String32` into a `Box<str>`.
+    /// Converts a `String32` into a [`Box<str>`].
     #[must_use]
     pub fn into_boxed_str(self) -> Box<str> {
         String::from(self).into_boxed_str()
@@ -210,7 +208,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the provided `Vec<u8>` holds more than `u32::MAX` bytes.
+    /// Panics if the provided [`Vec<u8>`] holds more than [`u32::MAX`] bytes.
     pub fn from_utf8(v: Vec<u8>) -> Result<Self, std::string::FromUtf8Error> {
         String::from_utf8(v).map(|s| s.try_into().unwrap())
     }
@@ -223,7 +221,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
+    /// Panics if the resulting UTF-8 representation would require more than [`u32::MAX`] bytes.
     pub fn from_utf16(v: &[u16]) -> Result<Self, std::string::FromUtf16Error> {
         String::from_utf16(v).map(|s| s.try_into().unwrap())
     }
@@ -236,16 +234,18 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting UTF-8 representation would require more than `u32::MAX` bytes.
+    /// Panics if the resulting UTF-8 representation would require more than [`u32::MAX`] bytes.
     #[must_use]
     pub fn from_utf16_lossy(v: &[u16]) -> Self {
         String::from_utf16_lossy(v).try_into().unwrap()
     }
 
+    /// Converts all uppercase ASCII characters to lowercase.
     pub fn make_ascii_lowercase(&mut self) {
         self.as_string(|s| s.make_ascii_lowercase());
     }
 
+    /// Converts all lowercase ASCII characters to uppercase.
     pub fn make_ascii_uppercase(&mut self) {
         self.as_string(|s| s.make_ascii_uppercase());
     }
@@ -324,7 +324,7 @@ impl ops::Deref for String32 {
 
     fn deref(&self) -> &Str32 {
         unsafe {
-            // safety: relies on `&Str32` and `&[u8]` having the same layout. (todo: is there a better way?)
+            // safety: relies on [`&Str32`] and `&[u8]` having the same layout. (todo: is there a better way?)
             &*(self.as_str().as_bytes() as *const [u8] as *const Str32)
         }
     }
