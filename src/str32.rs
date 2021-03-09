@@ -1,7 +1,6 @@
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::Hash;
-use std::slice;
 
 use usize_cast::IntoUsize;
 
@@ -35,6 +34,10 @@ impl Str32 {
     }
 
     /// Converts the `Str32` to a byte slice.
+    ///
+    /// # Safety
+    ///
+    /// The caller may only modify the byte slice in a way that preserves UTF-8 validity.
     #[must_use]
     pub unsafe fn as_bytes_mut(&mut self) -> &mut [u8] {
         self.0.as_bytes_mut()
@@ -79,26 +82,6 @@ impl Str32 {
     #[must_use]
     pub fn from_mut_str(s: &mut str) -> &mut Self {
         s.try_into().unwrap()
-    }
-
-    #[must_use]
-    pub fn get<I: slice::SliceIndex<str>>(&self, i: I) -> Option<&I::Output> {
-        self.0.get(i)
-    }
-
-    #[must_use]
-    pub fn get_mut<I: slice::SliceIndex<str>>(&mut self, i: I) -> Option<&mut I::Output> {
-        self.0.get_mut(i)
-    }
-
-    #[must_use]
-    pub unsafe fn get_unchecked<I: slice::SliceIndex<str>>(&self, i: I) -> &I::Output {
-        self.0.get_unchecked(i)
-    }
-
-    #[must_use]
-    pub unsafe fn get_unchecked_mut<I: slice::SliceIndex<str>>(&mut self, i: I) -> &mut I::Output {
-        self.0.get_unchecked_mut(i)
     }
 
     /// Returns the length of the `Str32` in bytes.
