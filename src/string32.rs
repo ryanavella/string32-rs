@@ -20,28 +20,26 @@ use super::TryFromStringError;
 /// On 64-bit platforms, `String32` has a smaller memory footprint than `String` struct, but with a maximum capacity of `u32::MAX` instead of `usize::MAX`.
 #[derive(Clone, Debug, Default, PartialOrd, Eq, Ord)]
 #[repr(transparent)]
-pub struct String32 {
-    vec: Vec32<u8>,
-}
+pub struct String32(Vec32<u8>);
 
 impl String32 {
     /// Creates a new empty `String32`.
     #[must_use]
     pub fn new() -> Self {
-        Self { vec: Vec32::new() }
+        Self(Vec32::new())
     }
 
     /// Returns the length of this `String32` in bytes.
     #[allow(clippy::missing_panics_doc)]
     #[must_use]
     pub fn len(&self) -> u32 {
-        self.vec.len().try_into().unwrap()
+        self.0.len().try_into().unwrap()
     }
 
     /// Returns the capacity of this `String32` in bytes.
     #[must_use]
     pub fn capacity(&self) -> u32 {
-        self.vec.capacity()
+        self.0.capacity()
     }
 
     /// A helper to call arbitrary `String` methods on a `String32.`
@@ -95,15 +93,13 @@ impl String32 {
     /// Creates a new empty `String32` with given capacity.
     #[must_use]
     pub fn with_capacity(cap: u32) -> Self {
-        Self {
-            vec: Vec32::with_capacity(cap),
-        }
+        Self(Vec32::with_capacity(cap))
     }
 
     /// Converts a `String32` into a vector of bytes.
     #[must_use]
     pub fn into_bytes(self) -> Vec<u8> {
-        self.vec.into_vec()
+        self.0.into_vec()
     }
 
     /// Returns a string slice encompassing the entire `String32`.
@@ -111,7 +107,7 @@ impl String32 {
     pub fn as_str(&self) -> &str {
         unsafe {
             // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::str_from_utf8_unchecked(&self.vec)
+            util::str_from_utf8_unchecked(&self.0)
         }
     }
 
@@ -120,7 +116,7 @@ impl String32 {
     pub fn as_mut_str(&mut self) -> &mut str {
         unsafe {
             // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::str_from_utf8_unchecked_mut(&mut self.vec)
+            util::str_from_utf8_unchecked_mut(&mut self.0)
         }
     }
 
@@ -135,12 +131,12 @@ impl String32 {
 
     /// Reserve space for additional bytes.
     pub fn reserve(&mut self, additional: u32) {
-        self.vec.reserve(additional)
+        self.0.reserve(additional)
     }
 
     /// Reserve space for an exact number of bytes.
     pub fn reserve_exact(&mut self, additional: u32) {
-        self.vec.reserve_exact(additional)
+        self.0.reserve_exact(additional)
     }
 
     /// Shrink the capacity of this `String32` to match its length.
@@ -151,7 +147,7 @@ impl String32 {
     /// Return a byte slice of the `String32`'s contents.
     #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
-        &self.vec
+        &self.0
     }
 
     /// Shortens this `String32` to the specified length.
@@ -172,7 +168,7 @@ impl String32 {
 
     /// Truncates the `String32` into an empty string.
     pub fn clear(&mut self) {
-        self.vec.clear()
+        self.0.clear()
     }
 
     /// Converts a `String32` into a `Box<str>`.
@@ -190,9 +186,11 @@ impl String32 {
     }
 
     pub unsafe fn from_raw_parts(buf: *mut u8, len: u32, cap: u32) -> Self {
-        Self {
-            vec: Vec32::from_vec(Vec::from_raw_parts(buf, len.into_usize(), cap.into_usize())),
-        }
+        Self(Vec32::from_vec(Vec::from_raw_parts(
+            buf,
+            len.into_usize(),
+            cap.into_usize(),
+        )))
     }
 
     /// Decodes a UTF-8 encoded vector of bytes into a `String32`.
@@ -243,7 +241,7 @@ impl AsRef<Str32> for String32 {
 
 impl AsRef<[u8]> for String32 {
     fn as_ref(&self) -> &[u8] {
-        &self.vec
+        &self.0
     }
 }
 
@@ -320,14 +318,14 @@ impl From<String32> for String {
     fn from(s: String32) -> Self {
         unsafe {
             // safety: we never store a non-utf8 Vec32<u8> in a String32
-            util::string_from_utf8_unchecked(s.vec.into_vec())
+            util::string_from_utf8_unchecked(s.0.into_vec())
         }
     }
 }
 
 impl From<String32> for Vec<u8> {
     fn from(s: String32) -> Self {
-        s.vec.into_vec()
+        s.0.into_vec()
     }
 }
 
@@ -335,12 +333,8 @@ impl TryFrom<String> for String32 {
     type Error = TryFromStringError;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
-        let s = s.into_bytes();
-        match u32::try_from(s.len()) {
-            Ok(_) => Ok(Self {
-                vec: Vec32::from_vec(s),
-            }),
-            Err(_) => Err(TryFromStringError(())),
-        }
+        u32::try_from(s.len())
+            .map(|_| Self(Vec32::from_vec(s.into_bytes())))
+            .map_err(|_| TryFromStringError(()))
     }
 }
