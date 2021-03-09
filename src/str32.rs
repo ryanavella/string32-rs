@@ -281,45 +281,41 @@ impl fmt::Display for Str32 {
     }
 }
 
-impl ToOwned for Str32 {
-    type Owned = String32;
-
-    fn to_owned(&self) -> String32 {
-        self.0.to_owned().try_into().unwrap()
-    }
-}
-
 impl<'a> From<&'a Str32> for &'a str {
     fn from(s: &'a Str32) -> Self {
         &s.0
     }
 }
 
+impl From<Box<Str32>> for String {
+    fn from(b: Box<Str32>) -> Self {
+        b.into()
+    }
+}
+
 impl From<Box<Str32>> for Box<str> {
     fn from(b: Box<Str32>) -> Self {
-        let ptr = Box::into_raw(b) as *mut str;
-        unsafe {
-            // safety: relies on `Box<Str32>` and `Box<str>` having the same layout
-            Box::from_raw(ptr)
-        }
+        b.into()
     }
 }
 
 impl From<Box<Str32>> for Box<[u8]> {
     fn from(b: Box<Str32>) -> Self {
-        b.into_boxed_str().into_boxed_bytes()
-    }
-}
-
-impl From<Box<Str32>> for String {
-    fn from(b: Box<Str32>) -> Self {
-        b.into_boxed_str().into_string()
+        b.into()
     }
 }
 
 impl From<Box<Str32>> for String32 {
     fn from(b: Box<Str32>) -> Self {
         String::from(b).try_into().unwrap()
+    }
+}
+
+impl ToOwned for Str32 {
+    type Owned = String32;
+
+    fn to_owned(&self) -> String32 {
+        self.0.to_owned().try_into().unwrap()
     }
 }
 
