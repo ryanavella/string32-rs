@@ -5,7 +5,7 @@ use std::hash::Hash;
 use usize_cast::IntoUsize;
 
 use super::String32;
-use super::TryFromStringError;
+use super::TryFromStrError;
 
 /// A slice of a `String32`.
 ///
@@ -329,6 +329,18 @@ impl From<Box<Str32>> for String32 {
     }
 }
 
+impl PartialEq<str> for Str32 {
+    fn eq(&self, rhs: &str) -> bool {
+        self.0.eq(rhs)
+    }
+}
+
+impl PartialEq<Str32> for str {
+    fn eq(&self, rhs: &Str32) -> bool {
+        self.eq(&rhs.0)
+    }
+}
+
 impl ToOwned for Str32 {
     type Owned = String32;
 
@@ -338,7 +350,7 @@ impl ToOwned for Str32 {
 }
 
 impl<'a> TryFrom<&'a str> for &'a Str32 {
-    type Error = TryFromStringError;
+    type Error = TryFromStrError;
 
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         u32::try_from(s.len())
@@ -349,12 +361,12 @@ impl<'a> TryFrom<&'a str> for &'a Str32 {
                     &*ptr
                 }
             })
-            .map_err(|_| TryFromStringError(()))
+            .map_err(|_| TryFromStrError(()))
     }
 }
 
 impl<'a> TryFrom<&'a mut str> for &'a mut Str32 {
-    type Error = TryFromStringError;
+    type Error = TryFromStrError;
 
     fn try_from(s: &mut str) -> Result<Self, Self::Error> {
         u32::try_from(s.len())
@@ -365,6 +377,6 @@ impl<'a> TryFrom<&'a mut str> for &'a mut Str32 {
                     &mut *ptr
                 }
             })
-            .map_err(|_| TryFromStringError(()))
+            .map_err(|_| TryFromStrError(()))
     }
 }

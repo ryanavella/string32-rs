@@ -2,15 +2,15 @@ use std::borrow::{Borrow, BorrowMut};
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::iter;
+use std::iter::FromIterator;
 use std::mem;
 use std::ops;
+use std::string;
 
 use mediumvec::Vec32;
 use usize_cast::IntoUsize;
 
-use super::Str32;
-use super::TryFromStringError;
+use super::{Str32, TryFromStrError, TryFromStringError};
 
 /// A string that is indexed by `u32` instead of `usize`.
 ///
@@ -79,11 +79,11 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
-    pub fn push_str<S>(&mut self, string: S)
+    pub fn push_str<S>(&mut self, s: S)
     where
         S: AsRef<str>,
     {
-        self.as_string(|s| s.push_str(string.as_ref()));
+        self.as_string(|st| st.push_str(s.as_ref()));
     }
 
     /// Pop a `char` from the end of this `String32`.
@@ -110,11 +110,11 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
-    pub fn insert_str<S>(&mut self, idx: u32, string: S)
+    pub fn insert_str<S>(&mut self, idx: u32, s: S)
     where
         S: AsRef<str>,
     {
-        self.as_string(|s| s.insert_str(idx.into_usize(), string.as_ref()));
+        self.as_string(|st| st.insert_str(idx.into_usize(), s.as_ref()));
     }
 
     /// Reserve space for additional bytes.
@@ -218,7 +218,7 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the provided [`Vec<u8>`] holds more than [`u32::MAX`] bytes.
-    pub fn from_utf8(v: Vec<u8>) -> Result<Self, std::string::FromUtf8Error> {
+    pub fn from_utf8(v: Vec<u8>) -> Result<Self, string::FromUtf8Error> {
         String::from_utf8(v).map(|s| s.try_into().unwrap())
     }
 
@@ -231,7 +231,7 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting UTF-8 representation would require more than [`u32::MAX`] bytes.
-    pub fn from_utf16(v: &[u16]) -> Result<Self, std::string::FromUtf16Error> {
+    pub fn from_utf16(v: &[u16]) -> Result<Self, string::FromUtf16Error> {
         String::from_utf16(v).map(|s| s.try_into().unwrap())
     }
 
@@ -380,25 +380,25 @@ impl From<String32> for Vec<u8> {
     }
 }
 
-impl iter::FromIterator<char> for String32 {
+impl FromIterator<char> for String32 {
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
     }
 }
 
-impl<'a> iter::FromIterator<&'a char> for String32 {
+impl<'a> FromIterator<&'a char> for String32 {
     fn from_iter<I: IntoIterator<Item = &'a char>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
     }
 }
 
-impl<'a> iter::FromIterator<&'a str> for String32 {
+impl<'a> FromIterator<&'a str> for String32 {
     fn from_iter<I: IntoIterator<Item = &'a str>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
     }
 }
 
-impl<'a> iter::FromIterator<&'a Str32> for String32 {
+impl<'a> FromIterator<&'a Str32> for String32 {
     fn from_iter<I: IntoIterator<Item = &'a Str32>>(iter: I) -> Self {
         String::from_iter(iter.into_iter().map(Str32::as_str))
             .try_into()
@@ -406,13 +406,13 @@ impl<'a> iter::FromIterator<&'a Str32> for String32 {
     }
 }
 
-impl iter::FromIterator<Box<str>> for String32 {
+impl FromIterator<Box<str>> for String32 {
     fn from_iter<I: IntoIterator<Item = Box<str>>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
     }
 }
 
-impl iter::FromIterator<Box<Str32>> for String32 {
+impl FromIterator<Box<Str32>> for String32 {
     fn from_iter<I: IntoIterator<Item = Box<Str32>>>(iter: I) -> Self {
         String::from_iter(iter.into_iter().map(Str32::into_boxed_str))
             .try_into()
@@ -420,13 +420,13 @@ impl iter::FromIterator<Box<Str32>> for String32 {
     }
 }
 
-impl iter::FromIterator<String> for String32 {
+impl FromIterator<String> for String32 {
     fn from_iter<I: IntoIterator<Item = String>>(iter: I) -> Self {
         String::from_iter(iter).try_into().unwrap()
     }
 }
 
-impl iter::FromIterator<Self> for String32 {
+impl FromIterator<Self> for String32 {
     fn from_iter<I: IntoIterator<Item = Self>>(iter: I) -> Self {
         String::from_iter(iter.into_iter().map(String::from))
             .try_into()
@@ -446,12 +446,47 @@ impl PartialEq for String32 {
     }
 }
 
+impl PartialEq<String> for String32 {
+    fn eq(&self, rhs: &String) -> bool {
+        self.as_str().eq(rhs)
+    }
+}
+
+impl PartialEq<String32> for String {
+    fn eq(&self, rhs: &String32) -> bool {
+        self.eq(rhs.as_str())
+    }
+}
+
 impl TryFrom<String> for String32 {
-    type Error = TryFromStringError;
+    type Error = TryFromStringError<String>;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
-        u32::try_from(s.len())
-            .map(|_| Self(Vec32::from_vec(s.into_bytes())))
-            .map_err(|_| TryFromStringError(()))
+        match u32::try_from(s.len()) {
+            Ok(_) => Ok(Self(Vec32::from_vec(s.into_bytes()))),
+            Err(_) => Err(TryFromStringError(s)),
+        }
+    }
+}
+
+impl TryFrom<Box<str>> for String32 {
+    type Error = TryFromStringError<Box<str>>;
+
+    fn try_from(s: Box<str>) -> Result<Self, Self::Error> {
+        match u32::try_from(s.len()) {
+            Ok(_) => Ok(Self(Vec32::from_vec(String::from(s).into_bytes()))),
+            Err(_) => Err(TryFromStringError(s)),
+        }
+    }
+}
+
+impl TryFrom<&str> for String32 {
+    type Error = TryFromStrError;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match u32::try_from(s.len()) {
+            Ok(_) => Ok(Self(Vec32::from_vec(s.to_owned().into_bytes()))),
+            Err(_) => Err(TryFromStrError(())),
+        }
     }
 }
