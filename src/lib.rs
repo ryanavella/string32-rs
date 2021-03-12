@@ -1,14 +1,13 @@
 //! A string that is indexed by `u32` instead of `usize`.
 //!
 //! On 64-bit platforms, `String32` only requires 16 bytes to store the pointer, length, and capacity. `String` by comparison requires 24 bytes, plus padding.
-
 use std::fmt;
 use std::mem::{align_of, size_of};
 
 mod str32;
 mod string32;
 
-pub use self::string32::String32;
+pub use crate::string32::String32;
 pub use str32::Str32;
 
 /// The error returned when a `String` conversion to `String32` would require a buffer larger than `u32::MAX` bytes.

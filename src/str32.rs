@@ -1,6 +1,7 @@
+use std::cmp;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 
 use usize_cast::IntoUsize;
 
@@ -10,7 +11,7 @@ use super::TryFromStrError;
 /// A slice of a `String32`.
 ///
 /// This is just a thin wrapper around [`str`], but with the convenience of an API built around [`u32`] indices instead of [`usize`] indices.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Eq)]
 #[repr(transparent)]
 pub struct Str32(str);
 
@@ -329,15 +330,27 @@ impl From<Box<Str32>> for String32 {
     }
 }
 
-impl PartialEq<str> for Str32 {
-    fn eq(&self, rhs: &str) -> bool {
-        self.0.eq(rhs)
+impl Hash for Str32 {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.0.hash(hasher);
     }
 }
 
-impl PartialEq<Str32> for str {
-    fn eq(&self, rhs: &Str32) -> bool {
-        self.eq(&rhs.0)
+impl Ord for Str32 {
+    fn cmp(&self, rhs: &Self) -> cmp::Ordering {
+        self.0.cmp(&rhs.0)
+    }
+}
+
+impl PartialEq for Str32 {
+    fn eq(&self, rhs: &Self) -> bool {
+        self.0 == rhs.0
+    }
+}
+
+impl PartialOrd for Str32 {
+    fn partial_cmp(&self, rhs: &Self) -> Option<cmp::Ordering> {
+        self.0.partial_cmp(&rhs.0)
     }
 }
 

@@ -1,4 +1,5 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::{Borrow, BorrowMut, Cow};
+use std::cmp;
 use std::convert::{TryFrom, TryInto};
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -15,7 +16,7 @@ use super::{Str32, TryFromStrError, TryFromStringError};
 /// A string that is indexed by `u32` instead of `usize`.
 ///
 /// On 64-bit platforms, `String32` only requires 16 bytes to store the pointer, length, and capacity. [`String`] by comparison requires 24 bytes, plus padding.
-#[derive(Clone, Debug, Default, PartialOrd, Eq, Ord)]
+#[derive(Clone, Debug, Default, Eq)]
 #[repr(transparent)]
 pub struct String32(Vec32<u8>);
 
@@ -333,8 +334,8 @@ impl ops::Deref for String32 {
 
     fn deref(&self) -> &Str32 {
         unsafe {
-            // safety: relies on [`&Str32`] and `&[u8]` having the same layout. (todo: is there a better way?)
-            &*(self.as_str().as_bytes() as *const [u8] as *const Str32)
+            // safety: relies on `&Str32` and `&str` having the same layout
+            &*(self.as_str() as *const str as *const Str32)
         }
     }
 }
@@ -342,8 +343,8 @@ impl ops::Deref for String32 {
 impl ops::DerefMut for String32 {
     fn deref_mut(&mut self) -> &mut Str32 {
         unsafe {
-            // safety: relies on `&mut Str32` and `&mut [u8]` having the same layout. (todo: is there a better way?)
-            &mut *(self.as_mut_str().as_bytes_mut() as *mut [u8] as *mut Str32)
+            // safety: relies on `&mut Str32` and `&mut str` having the same layout
+            &mut *(self.as_mut_str() as *mut str as *mut Str32)
         }
     }
 }
@@ -436,27 +437,83 @@ impl FromIterator<Self> for String32 {
 
 impl Hash for String32 {
     fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.as_str().hash(hasher);
+        <Str32 as Hash>::hash(self, hasher);
+    }
+}
+
+impl Ord for String32 {
+    fn cmp(&self, rhs: &Self) -> cmp::Ordering {
+        <Str32 as Ord>::cmp(self, rhs)
     }
 }
 
 impl PartialEq for String32 {
     fn eq(&self, rhs: &Self) -> bool {
-        self.as_str().eq(rhs.as_str())
+        <Str32 as PartialEq>::eq(self, rhs)
     }
 }
 
-impl PartialEq<String> for String32 {
-    fn eq(&self, rhs: &String) -> bool {
-        self.as_str().eq(rhs)
+impl PartialOrd for String32 {
+    fn partial_cmp(&self, rhs: &Self) -> Option<cmp::Ordering> {
+        <Str32 as PartialOrd>::partial_cmp(self, rhs)
     }
 }
 
-impl PartialEq<String32> for String {
-    fn eq(&self, rhs: &String32) -> bool {
-        self.eq(rhs.as_str())
-    }
+macro_rules! impl_cmp {
+    ($lhs:ty, $rhs: ty) => {
+        #[allow(clippy::use_self)]
+        impl<'a, 'b> PartialEq<$rhs> for $lhs {
+            fn eq(&self, rhs: &$rhs) -> bool {
+                <[u8] as PartialEq>::eq(self.as_bytes(), rhs.as_bytes())
+            }
+        }
+
+        #[allow(clippy::use_self)]
+        impl<'a, 'b> PartialEq<$lhs> for $rhs {
+            fn eq(&self, rhs: &$lhs) -> bool {
+                <[u8] as PartialEq>::eq(self.as_bytes(), rhs.as_bytes())
+            }
+        }
+
+        #[allow(clippy::use_self)]
+        impl<'a, 'b> PartialOrd<$rhs> for $lhs {
+            fn partial_cmp(&self, rhs: &$rhs) -> Option<cmp::Ordering> {
+                <[u8] as PartialOrd>::partial_cmp(self.as_bytes(), rhs.as_bytes())
+            }
+        }
+
+        #[allow(clippy::use_self)]
+        impl<'a, 'b> PartialOrd<$lhs> for $rhs {
+            fn partial_cmp(&self, rhs: &$lhs) -> Option<cmp::Ordering> {
+                <[u8] as PartialOrd>::partial_cmp(self.as_bytes(), rhs.as_bytes())
+            }
+        }
+    };
 }
+
+impl_cmp!(String32, Str32);
+impl_cmp!(String32, &'a Str32);
+impl_cmp!(String32, String);
+impl_cmp!(String32, str);
+impl_cmp!(String32, &'a str);
+impl_cmp!(String32, Cow<'a, Str32>);
+impl_cmp!(String32, Cow<'a, str>);
+impl_cmp!(String32, Box<str>);
+impl_cmp!(String32, Box<Str32>);
+impl_cmp!(Str32, &'a Str32);
+impl_cmp!(Str32, String);
+impl_cmp!(Str32, str);
+impl_cmp!(Str32, &'a str);
+impl_cmp!(Str32, Cow<'a, Str32>);
+impl_cmp!(Str32, Cow<'a, str>);
+impl_cmp!(Str32, Box<str>);
+impl_cmp!(Str32, Box<Str32>);
+impl_cmp!(&'a Str32, String);
+impl_cmp!(&'a Str32, str);
+impl_cmp!(&'a Str32, Cow<'b, Str32>);
+impl_cmp!(&'a Str32, Cow<'b, str>);
+impl_cmp!(&'a Str32, Box<str>);
+impl_cmp!(&'a Str32, Box<Str32>);
 
 impl TryFrom<String> for String32 {
     type Error = TryFromStringError<String>;
