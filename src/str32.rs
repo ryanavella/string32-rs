@@ -370,7 +370,7 @@ impl<'a> TryFrom<&'a str> for &'a Str32 {
             .map(|_| {
                 let ptr = s as *const str as *const Str32;
                 unsafe {
-                    // safety: relies on `&Str32` and [`&str`] having the same layout
+                    // safety: relies on `&Str32` and `&str` having the same layout
                     &*ptr
                 }
             })

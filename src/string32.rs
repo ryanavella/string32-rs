@@ -333,18 +333,20 @@ impl ops::Deref for String32 {
     type Target = Str32;
 
     fn deref(&self) -> &Str32 {
+        let ptr = self.as_str() as *const str as *const Str32;
         unsafe {
             // safety: relies on `&Str32` and `&str` having the same layout
-            &*(self.as_str() as *const str as *const Str32)
+            &*ptr
         }
     }
 }
 
 impl ops::DerefMut for String32 {
     fn deref_mut(&mut self) -> &mut Str32 {
+        let ptr = self.as_mut_str() as *mut str as *mut Str32;
         unsafe {
             // safety: relies on `&mut Str32` and `&mut str` having the same layout
-            &mut *(self.as_mut_str() as *mut str as *mut Str32)
+            &mut *ptr
         }
     }
 }
