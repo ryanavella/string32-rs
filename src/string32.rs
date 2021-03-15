@@ -49,22 +49,6 @@ impl String32 {
     pub fn with_capacity(cap: u32) -> Self {
         Self(Vec32::with_capacity(cap))
     }
-
-    /// Returns the length of this `String32` in bytes.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use string32::String32;
-    /// # use std::convert::TryFrom;
-    /// let s = String32::try_from("test").unwrap();
-    /// assert_eq!(4, s.len());
-    /// ```
-    #[must_use]
-    pub fn len(&self) -> u32 {
-        self.0.len().try_into().unwrap()
-    }
-
     /// Returns the capacity of this `String32` in bytes.
     ///
     /// # Examples
@@ -79,22 +63,6 @@ impl String32 {
     #[must_use]
     pub fn capacity(&self) -> u32 {
         self.0.capacity()
-    }
-
-    /// Return whether the `String32` is an empty string.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use string32::String32;
-    /// let mut s = String32::new();
-    /// assert!(s.is_empty());
-    /// s.push('a');
-    /// assert!(!s.is_empty());
-    /// ```
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
     /// A helper to call arbitrary [`String`] methods on a `String32.`
@@ -390,36 +358,6 @@ impl String32 {
     #[must_use]
     pub fn from_utf16_lossy(v: &[u16]) -> Self {
         String::from_utf16_lossy(v).try_into().unwrap()
-    }
-
-    /// Converts all uppercase ASCII characters to lowercase.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use string32::String32;
-    /// # use std::convert::TryFrom;
-    /// let mut s = String32::try_from("ABC").unwrap();
-    /// s.make_ascii_lowercase();
-    /// assert_eq!("abc", s);
-    /// ```
-    pub fn make_ascii_lowercase(&mut self) {
-        self.as_string(|s| s.make_ascii_lowercase());
-    }
-
-    /// Converts all lowercase ASCII characters to uppercase.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use string32::String32;
-    /// # use std::convert::TryFrom;
-    /// let mut s = String32::try_from("abc").unwrap();
-    /// s.make_ascii_uppercase();
-    /// assert_eq!("ABC", s);
-    /// ```
-    pub fn make_ascii_uppercase(&mut self) {
-        self.as_string(|s| s.make_ascii_uppercase());
     }
 }
 

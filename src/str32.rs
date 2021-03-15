@@ -85,12 +85,30 @@ impl Str32 {
     }
 
     /// Returns the length of the `Str32` in bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "test".try_into().unwrap();
+    /// assert_eq!(4, s.len());
+    /// ```
     #[must_use]
     pub fn len(&self) -> u32 {
         self.0.len().try_into().unwrap()
     }
 
     /// Returns whether the `Str32` is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "".try_into().unwrap();
+    /// assert!(s.is_empty());
+    /// ```
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -185,11 +203,31 @@ impl Str32 {
     }
 
     /// Converts all uppercase ASCII characters to lowercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("ABC").unwrap();
+    /// s.make_ascii_lowercase();
+    /// assert_eq!("abc", s);
+    /// ```
     pub fn make_ascii_lowercase(&mut self) {
         self.0.make_ascii_lowercase()
     }
 
     /// Converts all lowercase ASCII characters to uppercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abc").unwrap();
+    /// s.make_ascii_uppercase();
+    /// assert_eq!("ABC", s);
+    /// ```
     pub fn make_ascii_uppercase(&mut self) {
         self.0.make_ascii_uppercase()
     }
