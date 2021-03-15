@@ -22,30 +22,76 @@ pub struct String32(Vec32<u8>);
 
 impl String32 {
     /// Creates a new empty `String32`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let s = String32::new();
+    /// ```
     #[must_use]
     pub fn new() -> Self {
         Self(Vec32::new())
     }
 
     /// Creates a new empty `String32` with given capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::with_capacity(1);
+    /// let cap = s.capacity();
+    /// s.push('\n');
+    /// assert_eq!(cap, s.capacity());
+    /// ```
     #[must_use]
     pub fn with_capacity(cap: u32) -> Self {
         Self(Vec32::with_capacity(cap))
     }
 
     /// Returns the length of this `String32` in bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let s = String32::try_from("test").unwrap();
+    /// assert_eq!(4, s.len());
+    /// ```
     #[must_use]
     pub fn len(&self) -> u32 {
         self.0.len().try_into().unwrap()
     }
 
     /// Returns the capacity of this `String32` in bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::new();
+    /// assert_eq!(0, s.capacity());
+    /// s.push('\n');
+    /// assert!(s.capacity() > 0);
+    /// ```
     #[must_use]
     pub fn capacity(&self) -> u32 {
         self.0.capacity()
     }
 
     /// Return whether the `String32` is an empty string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::new();
+    /// assert!(s.is_empty());
+    /// s.push('a');
+    /// assert!(!s.is_empty());
+    /// ```
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -56,6 +102,15 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::new();
+    /// s.as_string(|s| s.push_str("test"));
+    /// assert_eq!(s, "test");
+    /// ```
     pub fn as_string<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(&mut String) -> T,
@@ -71,6 +126,15 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::new();
+    /// s.push('\n');
+    /// assert_eq!(s, "\n");
+    /// ```
     pub fn push(&mut self, ch: char) {
         self.as_string(|s| s.push(ch));
     }
@@ -80,6 +144,15 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::new();
+    /// s.push_str("test");
+    /// assert_eq!(s, "test");
+    /// ```
     pub fn push_str<S>(&mut self, s: S)
     where
         S: AsRef<str>,
@@ -88,11 +161,31 @@ impl String32 {
     }
 
     /// Pop a `char` from the end of this `String32`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("\n").unwrap();
+    /// assert_eq!(s.pop(), Some('\n'));
+    /// assert_eq!(s.pop(), None);
+    /// ```
     pub fn pop(&mut self) -> Option<char> {
         self.as_string(String::pop)
     }
 
     /// Return the `char` at a given byte index.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abbc").unwrap();
+    /// assert_eq!(s.remove(1), 'b');
+    /// assert_eq!(s, "abc");
+    /// ```
     pub fn remove(&mut self, idx: u32) -> char {
         self.as_string(|s| s.remove(idx.into_usize()))
     }
@@ -102,6 +195,16 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("ac").unwrap();
+    /// s.insert(1, 'b');
+    /// assert_eq!(s, "abc");
+    /// ```
     pub fn insert(&mut self, idx: u32, ch: char) {
         self.as_string(|s| s.insert(idx.into_usize(), ch));
     }
@@ -111,6 +214,16 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("ad").unwrap();
+    /// s.insert_str(1, "bc");
+    /// assert_eq!(s, "abcd");
+    /// ```
     pub fn insert_str<S>(&mut self, idx: u32, s: S)
     where
         S: AsRef<str>,
@@ -119,11 +232,31 @@ impl String32 {
     }
 
     /// Reserve space for additional bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abc").unwrap();
+    /// s.reserve(10);
+    /// println!("{}", s.capacity());
+    /// assert!(s.capacity() >= 13);
+    /// ```
     pub fn reserve(&mut self, additional: u32) {
         self.0.reserve(additional)
     }
 
     /// Reserve space for an exact number of bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::with_capacity(5);
+    /// s.reserve_exact(10);
+    /// assert!(s.capacity() >= 10);
+    /// ```
     pub fn reserve_exact(&mut self, additional: u32) {
         self.0.reserve_exact(additional)
     }
@@ -134,22 +267,61 @@ impl String32 {
     }
 
     /// Shortens this `String32` to the specified length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abcde").unwrap();
+    /// s.truncate(3);
+    /// assert_eq!(s, "abc");
+    /// ```
     pub fn truncate(&mut self, new_len: u32) {
         self.as_string(|s| s.truncate(new_len.into_usize()));
     }
 
     /// Truncates the `String32` into an empty string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abc").unwrap();
+    /// s.clear();
+    /// assert!(s.is_empty());
+    /// ```
     pub fn clear(&mut self) {
         self.0.clear()
     }
 
     /// Converts a `String32` into a vector of bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let s = String32::try_from("123").unwrap();
+    /// let v = s.into_bytes();
+    /// assert_eq!(v, b"123");
+    /// ```
     #[must_use]
     pub fn into_bytes(self) -> Vec<u8> {
         self.0.into_vec()
     }
 
     /// Returns a string slice encompassing the entire `String32`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let s = String32::try_from("123").unwrap();
+    /// assert_eq!("123", s.as_str());
+    /// ```
     #[must_use]
     pub fn as_str(&self) -> &str {
         if cfg!(debug_assertions) {
@@ -353,7 +525,7 @@ impl ops::DerefMut for String32 {
 
 impl fmt::Display for String32 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_str().fmt(f)
+        <Str32 as fmt::Display>::fmt(self, f)
     }
 }
 
