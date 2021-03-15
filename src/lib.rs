@@ -16,7 +16,7 @@ pub struct TryFromStringError<T>(T);
 
 impl<T> TryFromStringError<T> {
     /// Return the string that was unable to be converted into a `String32`.
-    pub fn into_string(self) -> T {
+    pub fn into_inner(self) -> T {
         self.0
     }
 }
