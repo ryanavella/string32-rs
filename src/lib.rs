@@ -51,8 +51,8 @@ comptime_assert_eq!(align_of::<&str>(), align_of::<&Str32>());
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
     use super::*;
+    use std::convert::TryFrom;
 
     const TEXT: &str = include_str!("lib.rs");
 
@@ -70,17 +70,17 @@ mod tests {
         let mut s = String32::try_from(TEXT).unwrap();
         s.shrink_to_fit();
         s.push('\n');
-        s.reserve_exact(2*s.len());
+        s.reserve_exact(2 * s.len());
         s.reserve(1);
         s.push_str(TEXT);
         s.pop();
-        s.remove(s.len()-1);
+        s.remove(s.len() - 1);
         s.remove(0);
-        s.insert(s.len()-1, '\n');
+        s.insert(s.len() - 1, '\n');
         s.insert(0, '\n');
         s.insert_str(0, TEXT);
-        s.truncate(s.len()/2);
-        let mut other = s.split_off(s.len()/2);
+        s.truncate(s.len() / 2);
+        let mut other = s.split_off(s.len() / 2);
         other.push_str(&s);
         assert!(!other.is_empty());
     }

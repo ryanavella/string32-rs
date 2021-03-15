@@ -17,6 +17,15 @@ pub struct Str32(str);
 
 impl Str32 {
     /// Convert a `&Str32` to a [`&str`] slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "123".try_into().unwrap();
+    /// assert_eq!("123", s.as_str());
+    /// ```
     #[must_use]
     pub const fn as_str(&self) -> &str {
         &self.0

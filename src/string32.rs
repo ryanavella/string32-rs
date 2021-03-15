@@ -312,47 +312,6 @@ impl String32 {
         self.0.into_vec()
     }
 
-    /// Returns a string slice encompassing the entire `String32`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use string32::String32;
-    /// # use std::convert::TryFrom;
-    /// let s = String32::try_from("123").unwrap();
-    /// assert_eq!("123", s.as_str());
-    /// ```
-    #[must_use]
-    pub fn as_str(&self) -> &str {
-        if cfg!(debug_assertions) {
-            std::str::from_utf8(&self.0).unwrap()
-        } else {
-            unsafe {
-                // safety: we never store a non-utf8 Vec32<u8> in a String32
-                std::str::from_utf8_unchecked(&self.0)
-            }
-        }
-    }
-
-    /// Returns a *mutable* string slice encompassing the entire `String32`.
-    #[must_use]
-    pub fn as_mut_str(&mut self) -> &mut str {
-        if cfg!(debug_assertions) {
-            std::str::from_utf8_mut(&mut self.0).unwrap()
-        } else {
-            unsafe {
-                // safety: we never store a non-utf8 Vec32<u8> in a String32
-                std::str::from_utf8_unchecked_mut(&mut self.0)
-            }
-        }
-    }
-
-    /// Return a byte slice of the `String32`'s contents.
-    #[must_use]
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.0
-    }
-
     /// Converts a `String32` into a [`Box<str>`].
     #[must_use]
     pub fn into_boxed_str(self) -> Box<str> {
@@ -364,6 +323,17 @@ impl String32 {
     /// # Panics
     ///
     /// Panics if the index is out-of-bounds or is not a UTF-8 code point boundary.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s1 = String32::try_from("123abc").unwrap();
+    /// let s2 = s1.split_off(3);
+    /// assert_eq!("123", s1);
+    /// assert_eq!("abc", s2);
+    /// ```
     #[must_use = "if you plan to discard the second half, consider using `String32::truncate` instead"]
     pub fn split_off(&mut self, at: u32) -> Self {
         self.as_string(|s| s.split_off(at.into_usize()).try_into().unwrap())
@@ -423,11 +393,31 @@ impl String32 {
     }
 
     /// Converts all uppercase ASCII characters to lowercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("ABC").unwrap();
+    /// s.make_ascii_lowercase();
+    /// assert_eq!("abc", s);
+    /// ```
     pub fn make_ascii_lowercase(&mut self) {
         self.as_string(|s| s.make_ascii_lowercase());
     }
 
     /// Converts all lowercase ASCII characters to uppercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("abc").unwrap();
+    /// s.make_ascii_uppercase();
+    /// assert_eq!("ABC", s);
+    /// ```
     pub fn make_ascii_uppercase(&mut self) {
         self.as_string(|s| s.make_ascii_uppercase());
     }
@@ -505,7 +495,7 @@ impl ops::Deref for String32 {
     type Target = Str32;
 
     fn deref(&self) -> &Str32 {
-        let ptr = self.as_str() as *const str as *const Str32;
+        let ptr = self.0.as_ref() as *const [u8] as *const str as *const Str32;
         unsafe {
             // safety: relies on `&Str32` and `&str` having the same layout
             &*ptr
@@ -515,7 +505,7 @@ impl ops::Deref for String32 {
 
 impl ops::DerefMut for String32 {
     fn deref_mut(&mut self) -> &mut Str32 {
-        let ptr = self.as_mut_str() as *mut str as *mut Str32;
+        let ptr = self.0.as_mut() as *mut [u8] as *mut str as *mut Str32;
         unsafe {
             // safety: relies on `&mut Str32` and `&mut str` having the same layout
             &mut *ptr
