@@ -348,10 +348,6 @@ impl String32 {
 
     /// Lossily decodes a UTF-16 encoded slice into a `String32`.
     ///
-    /// # Errors
-    ///
-    /// Returns `Err` if the slice is not valid UTF-16.
-    ///
     /// # Panics
     ///
     /// Panics if the resulting UTF-8 representation would require more than [`u32::MAX`] bytes.

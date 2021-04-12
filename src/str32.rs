@@ -254,42 +254,105 @@ impl Str32 {
     }
 
     /// Returns a lowercase equivalent of this `&Str32` as a new [`String32`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "ΑΒΓΔ".try_into().unwrap();
+    /// assert_eq!("αβγδ", s.to_lowercase());
+    /// ```
     #[must_use]
     pub fn to_lowercase(&self) -> String32 {
         self.0.to_lowercase().try_into().unwrap()
     }
 
     /// Returns an uppercase equivalent of this `&Str32` as a new [`String32`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "αβγδ".try_into().unwrap();
+    /// assert_eq!("ΑΒΓΔ", s.to_uppercase());
+    /// ```
     #[must_use]
     pub fn to_uppercase(&self) -> String32 {
         self.0.to_uppercase().try_into().unwrap()
     }
 
     /// Returns a new [`String32`] with each ASCII uppercase character mapped to lowercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "TEST".try_into().unwrap();
+    /// assert_eq!("test", s.to_ascii_lowercase());
+    /// ```
     #[must_use]
     pub fn to_ascii_lowercase(&self) -> String32 {
         self.0.to_ascii_lowercase().try_into().unwrap()
     }
 
     /// Returns a new [`String32`] with each ASCII lowercase character mapped to uppercase.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "test".try_into().unwrap();
+    /// assert_eq!("TEST", s.to_ascii_uppercase());
+    /// ```
     #[must_use]
     pub fn to_ascii_uppercase(&self) -> String32 {
         self.0.to_ascii_uppercase().try_into().unwrap()
     }
 
     /// Returns a substring of this string with leading and trailing whitespace removed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = " test\t\n ".try_into().unwrap();
+    /// assert_eq!("test", s.trim());
+    /// ```
     #[must_use]
     pub fn trim(&self) -> &Self {
         self.0.trim().try_into().unwrap()
     }
 
     /// Returns a substring of this string with leading whitespace removed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = " test\t\n ".try_into().unwrap();
+    /// assert_eq!("test\t\n ", s.trim_start());
+    /// ```
     #[must_use]
     pub fn trim_start(&self) -> &Self {
         self.0.trim_start().try_into().unwrap()
     }
 
     /// Returns a substring of this string with trailing whitespace removed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = " test\t\n ".try_into().unwrap();
+    /// assert_eq!(" test", s.trim_end());
+    /// ```
     #[must_use]
     pub fn trim_end(&self) -> &Self {
         self.0.trim_end().try_into().unwrap()
