@@ -21,7 +21,7 @@ use super::{Str32, TryFromStrError, TryFromStringError};
 pub struct String32(Vec32<u8>);
 
 impl String32 {
-    /// Creates a new empty `String32`.
+    /// Create an empty `String32`.
     ///
     /// # Examples
     ///
@@ -34,7 +34,7 @@ impl String32 {
         Self(Vec32::new())
     }
 
-    /// Creates a new empty `String32` with given capacity.
+    /// Create an empty `String32` with enough capacity to hold `cap` bytes.
     ///
     /// # Examples
     ///
@@ -49,7 +49,8 @@ impl String32 {
     pub fn with_capacity(cap: u32) -> Self {
         Self(Vec32::with_capacity(cap))
     }
-    /// Returns the capacity of this `String32` in bytes.
+
+    /// Return the capacity of this `String32` in bytes.
     ///
     /// # Examples
     ///
@@ -145,6 +146,10 @@ impl String32 {
 
     /// Return the `char` at a given byte index.
     ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is not a UTF-8 code point boundary.
+    ///
     /// # Examples
     ///
     /// ```
@@ -162,7 +167,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    /// Panics if `idx` is not a UTF-8 code point boundary, or if the resulting string would require more than [`u32::MAX`] bytes.
     ///
     /// # Examples
     ///
@@ -181,7 +186,7 @@ impl String32 {
     ///
     /// # Panics
     ///
-    /// Panics if the resulting string would require more than [`u32::MAX`] bytes.
+    /// Panics if `idx` is not a UTF-8 code point boundary, or if the resulting string would require more than [`u32::MAX`] bytes.
     ///
     /// # Examples
     ///
@@ -230,6 +235,15 @@ impl String32 {
     }
 
     /// Shrink the capacity of this `String32` to match its length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// let mut s = String32::with_capacity(10);
+    /// s.shrink_to_fit();
+    /// assert_eq!(0, s.capacity());
+    /// ```
     pub fn shrink_to_fit(&mut self) {
         self.as_string(String::shrink_to_fit);
     }
@@ -281,6 +295,15 @@ impl String32 {
     }
 
     /// Converts a `String32` into a [`Box<str>`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let s = String32::try_from("123").unwrap();
+    /// let b = s.into_boxed_str();
+    /// ```
     #[must_use]
     pub fn into_boxed_str(self) -> Box<str> {
         String::from(self).into_boxed_str()
@@ -559,28 +582,24 @@ impl PartialOrd for String32 {
 
 macro_rules! impl_cmp {
     ($lhs:ty, $rhs: ty) => {
-        #[allow(clippy::use_self)]
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
             fn eq(&self, rhs: &$rhs) -> bool {
                 <[u8] as PartialEq>::eq(self.as_bytes(), rhs.as_bytes())
             }
         }
 
-        #[allow(clippy::use_self)]
         impl<'a, 'b> PartialEq<$lhs> for $rhs {
             fn eq(&self, rhs: &$lhs) -> bool {
                 <[u8] as PartialEq>::eq(self.as_bytes(), rhs.as_bytes())
             }
         }
 
-        #[allow(clippy::use_self)]
         impl<'a, 'b> PartialOrd<$rhs> for $lhs {
             fn partial_cmp(&self, rhs: &$rhs) -> Option<cmp::Ordering> {
                 <[u8] as PartialOrd>::partial_cmp(self.as_bytes(), rhs.as_bytes())
             }
         }
 
-        #[allow(clippy::use_self)]
         impl<'a, 'b> PartialOrd<$lhs> for $rhs {
             fn partial_cmp(&self, rhs: &$lhs) -> Option<cmp::Ordering> {
                 <[u8] as PartialOrd>::partial_cmp(self.as_bytes(), rhs.as_bytes())

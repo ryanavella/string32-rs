@@ -146,7 +146,7 @@ impl Str32 {
     ///
     /// # Panics
     ///
-    /// Panics when given an index that is not on a UTF-8 code point boundary, or if the index is out-of-bounds.
+    /// Panics if `mid` is not a UTF-8 code point boundary.
     #[must_use]
     pub fn split_at(&self, mid: u32) -> (&Self, &Self) {
         let (s1, s2) = self.0.split_at(mid.into_usize());
@@ -157,7 +157,7 @@ impl Str32 {
     ///
     /// # Panics
     ///
-    /// Panics when given an index that is not on a UTF-8 code point boundary, or if the index is out-of-bounds.
+    /// Panics if `mid` is not a UTF-8 code point boundary.
     #[must_use]
     pub fn split_at_mut(&mut self, mid: u32) -> (&mut Self, &mut Self) {
         let (s1, s2) = self.0.split_at_mut(mid.into_usize());
