@@ -4,6 +4,15 @@ version = "0.1.0"
 authors = ["Ryan Avella"]
 edition = "2018"
 
+description = "A string that is indexed by u32 instead of usize"
+documentation = "https://docs.rs/string32"
+readme = "README.md"
+homepage = "https://github.com/ryanavella/string32-rs"
+repository = "https://github.com/ryanavella/string32-rs"
+license = "Unlicense OR MIT"
+keywords = ["string", "small", "size"]
+categories = ["data-structures"]
+
 [dependencies]
 mediumvec = "1.1.0"
 usize_cast = "1.1.0"
