@@ -38,12 +38,31 @@ impl Str32 {
     }
 
     /// Converts the `Str32` to a byte slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::Str32;
+    /// # use std::convert::TryInto;
+    /// let s: &Str32 = "123".try_into().unwrap();
+    /// assert_eq!(b"123", s.as_bytes());
+    /// ```
     #[must_use]
     pub const fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
 
     /// Converts the `Str32` to a byte slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use string32::String32;
+    /// # use std::convert::TryFrom;
+    /// let mut s = String32::try_from("123").unwrap();
+    /// let bytes = unsafe { s.as_bytes_mut() };
+    /// assert_eq!(b"123", bytes);
+    /// ```
     ///
     /// # Safety
     ///

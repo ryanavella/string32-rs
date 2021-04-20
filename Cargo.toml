@@ -3,7 +3,6 @@ name = "string32"
 version = "0.1.0"
 authors = ["Ryan Avella"]
 edition = "2018"
-publish = false
 
 [dependencies]
 mediumvec = "1.1.0"
