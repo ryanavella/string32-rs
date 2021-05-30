@@ -557,8 +557,8 @@ impl FromIterator<Self> for String32 {
 }
 
 impl Hash for String32 {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        <Str32 as Hash>::hash(self, hasher);
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (**self).hash(state);
     }
 }
 

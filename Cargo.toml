@@ -14,5 +14,5 @@ keywords = ["string", "small", "size"]
 categories = ["data-structures"]
 
 [dependencies]
-mediumvec = "1.1.0"
+mediumvec = "1.2.0"
 usize_cast = "1.1.0"

@@ -57,7 +57,7 @@ mod tests {
     const TEXT: &str = include_str!("lib.rs");
 
     #[test]
-    fn simple() {
+    fn test_simple() {
         let s1 = String::from(TEXT);
         let mut s2 = String32::new();
         s2.push_str(TEXT);
@@ -66,7 +66,7 @@ mod tests {
     }
 
     #[test]
-    fn complex() {
+    fn test_complex() {
         let mut s = String32::try_from(TEXT).unwrap();
         s.shrink_to_fit();
         s.push('\n');
@@ -83,5 +83,24 @@ mod tests {
         let mut other = s.split_off(s.len() / 2);
         other.push_str(&s);
         assert!(!other.is_empty());
+    }
+
+    #[test]
+    fn test_hash() {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+
+        let mut hash1 = DefaultHasher::new();
+        let mut hash2 = DefaultHasher::new();
+
+        let s1 = String::from(TEXT);
+        let s2 = String32::try_from(TEXT).unwrap();
+
+        <String as Hash>::hash(&s1, &mut hash1);
+        <String32 as Hash>::hash(&s2, &mut hash2);
+        <str as Hash>::hash(&s1, &mut hash1);
+        <Str32 as Hash>::hash(&s2, &mut hash2);
+
+        assert_eq!(hash1.finish(), hash2.finish());
     }
 }

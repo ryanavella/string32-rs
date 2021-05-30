@@ -460,8 +460,8 @@ impl From<Box<Str32>> for String32 {
 }
 
 impl Hash for Str32 {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.0.hash(hasher);
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
     }
 }
 
