@@ -73,7 +73,6 @@ impl Str32 {
     }
 
     /// Returns an iterator over the bytes of the string slice.
-    #[must_use]
     pub fn bytes(&self) -> std::str::Bytes<'_> {
         self.0.bytes()
     }
@@ -134,7 +133,6 @@ impl Str32 {
     }
 
     /// Returns an iterator over the characters of the `Str32`.
-    #[must_use]
     pub fn chars(&self) -> std::str::Chars {
         self.0.chars()
     }
