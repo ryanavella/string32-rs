@@ -420,7 +420,7 @@ impl AsMut<Str32> for String32 {
 
 impl AsRef<Str32> for String32 {
     fn as_ref(&self) -> &Str32 {
-        &*self
+        self
     }
 }
 
@@ -438,7 +438,7 @@ impl AsRef<str> for String32 {
 
 impl Borrow<Str32> for String32 {
     fn borrow(&self) -> &Str32 {
-        &*self
+        self
     }
 }
 
