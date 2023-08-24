@@ -1,3 +1,4 @@
+#![allow(clippy::incorrect_partial_ord_impl_on_ord_type)]
 //! A string that is indexed by `u32` instead of `usize`.
 //!
 //! On 64-bit platforms, `String32` only requires 16 bytes to store the pointer, length, and capacity. `String` by comparison requires 24 bytes, plus padding.
